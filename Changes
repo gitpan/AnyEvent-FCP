@@ -1,0 +1,7 @@
+Revision history for AnyEvent-FCP
+
+0.2  Tue Jul 28 04:19:59 CEST 2009
+	- first release, brittle, undocumented, incomplete.
+
+0.1  Thu May  1 17:23:16 CEST 2008
+	- original version, adapted from Net::FCP.

@@ -1,0 +1,108 @@
+NAME
+    AnyEvent::FCP - freenet client protocol 2.0
+
+SYNOPSIS
+       use AnyEvent::FCP;
+
+       my $fcp = new AnyEvent::FCP;
+
+    # transactions return condvars my $lp_cv = $fcp->list_peers; my $pr_cv =
+    $fcp->list_persistent_requests;
+
+       my $peers = $lp_cv->recv;
+       my $reqs  = $pr_cv->recv;
+
+DESCRIPTION
+    This module implements the freenet client protocol version 2.0, as used
+    by freenet 0.7. See Net::FCP for the earlier freenet 0.5 version.
+
+    See <http://wiki.freenetproject.org/FreenetFCPSpec2Point0> for a
+    description of what the messages do.
+
+    The module uses AnyEvent to find a suitable event module.
+
+    Only very little is implemented, ask if you need more, and look at the
+    example program later in this section.
+
+  IMPORT TAGS
+    Nothing much can be "imported" from this module right now.
+
+  THE AnyEvent::FCP CLASS
+    $fcp = new AnyEvent::FCP [host => $host][, port => $port][, progress =>
+    \&cb][, name => $name]
+        Create a new FCP connection to the given host and port (default
+        127.0.0.1:9481, or the environment variables "FREDHOST" and
+        "FREDPORT").
+
+        If no "name" was specified, then AnyEvent::FCP will generate a
+        (hopefully) unique client name for you.
+
+    $cv = $fcp->list_peers ([$with_metdata[, $with_volatile]])
+    $peers = $fcp->list_peers_sync ([$with_metdata[, $with_volatile]])
+    $cv = $fcp->list_peer_notes ($node_identifier)
+    $notes = $fcp->list_peer_notes_sync ($node_identifier)
+    $cv = $fcp->watch_global ($enabled[, $verbosity_mask])
+    $fcp->watch_global_sync ($enabled[, $verbosity_mask])
+    $cv = $fcp->list_persistent_requests
+    $reqs = $fcp->list_persistent_requests_sync
+    $cv = $fcp->remove_request ($global, $identifier)
+    $status = $fcp->remove_request_sync ($global, $identifier)
+    $cv = $fcp->modify_persistent_request ($global, $identifier[,
+    $client_token[, $priority_class]])
+    $status = $fcp->modify_persistent_request_sync ($global, $identifier[,
+    $client_token[, $priority_class]])
+    $cv = $fcp->get_plugin_info ($name, $detailed)
+    $info = $fcp->get_plugin_info_sync ($name, $detailed)
+
+EXAMPLE PROGRAM
+       use AnyEvent::FCP;
+
+       my $fcp = new AnyEvent::FCP;
+
+       # let us look at the global request list
+       $fcp->watch_global (1, 0);
+
+       # list them, synchronously
+       my $req = $fcp->list_persistent_requests_sync;
+
+       # go through all requests
+       for my $req (values %$req) {
+          # skip jobs not directly-to-disk
+          next unless $req->{return_type} eq "disk";
+          # skip jobs not issued by FProxy
+          next unless $req->{identifier} =~ /^FProxy:/;
+
+          if ($req->{data_found}) {
+             # file has been successfully downloaded
+         
+             ... move the file away
+             (left as exercise)
+
+             # remove the request
+
+             $fcp->remove_request (1, $req->{identifier});
+          } elsif ($req->{get_failed}) {
+             # request has failed
+             if ($req->{get_failed}{code} == 11) {
+                # too many path components, should restart
+             } else {
+                # other failure
+             }
+          } else {
+             # modify priorities randomly, to improve download rates
+             $fcp->modify_persistent_request (1, $req->{identifier}, undef, int 6 - 5 * (rand) ** 1.7)
+                if 0.1 > rand;
+          }
+       }
+
+       # see if the dummy plugin is loaded, to ensure all previous requests have finished.
+       $fcp->get_plugin_info_sync ("dummy");
+
+SEE ALSO
+    <http://wiki.freenetproject.org/FreenetFCPSpec2Point0>, Net::FCP.
+
+BUGS
+AUTHOR
+     Marc Lehmann <schmorp@schmorp.de>
+     http://home.schmorp.de/
+
