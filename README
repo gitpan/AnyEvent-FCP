@@ -49,10 +49,17 @@ DESCRIPTION
     $status = $fcp->remove_request_sync ($global, $identifier)
     $cv = $fcp->modify_persistent_request ($global, $identifier[,
     $client_token[, $priority_class]])
-    $status = $fcp->modify_persistent_request_sync ($global, $identifier[,
+    $sync = $fcp->modify_persistent_request_sync ($global, $identifier[,
     $client_token[, $priority_class]])
     $cv = $fcp->get_plugin_info ($name, $detailed)
     $info = $fcp->get_plugin_info_sync ($name, $detailed)
+    $cv = $fcp->client_get ($uri, $identifier, %kv)
+    $status = $fcp->client_get_sync ($uri, $identifier, %kv)
+        %kv can contain (<http://wiki.freenetproject.org/FCP2p0ClientGet>).
+
+        ignore_ds, ds_only, verbosity, max_size, max_temp_size, max_retries,
+        priority_class, persistence, client_token, global, return_type,
+        binary_blob, allowed_mime_types, filename, temp_filename
 
 EXAMPLE PROGRAM
        use AnyEvent::FCP;

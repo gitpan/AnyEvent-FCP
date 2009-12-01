@@ -13,6 +13,7 @@ WriteMakefile(
 #    EXE_FILES    => [qw(bin/fmd)],
     PREREQ_PM    => {
                        AnyEvent        => 2.6,
+                       common::sense   => 0,
                     },
 );
 

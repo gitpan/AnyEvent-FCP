@@ -9,9 +9,9 @@
       "version" : 1.4,
       "url" : "http://module-build.sourceforge.net/META-spec-v1.4.html"
    },
-   "generated_by" : "ExtUtils::MakeMaker version 6.50",
+   "generated_by" : "ExtUtils::MakeMaker version 6.54",
    "distribution_type" : "module",
-   "version" : "0.2",
+   "version" : "0.21",
    "name" : "AnyEvent-FCP",
    "author" : [],
    "license" : "unknown",
@@ -19,7 +19,8 @@
       "ExtUtils::MakeMaker" : 0
    },
    "requires" : {
-      "AnyEvent" : 2.6
+      "AnyEvent" : 2.6,
+      "common::sense" : 0
    },
    "abstract" : null,
    "configure_requires" : {

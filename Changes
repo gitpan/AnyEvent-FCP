@@ -1,5 +1,8 @@
 Revision history for AnyEvent-FCP
 
+0.21 Tue Dec  1 14:49:30 CET 2009
+	- added missing dependency on common::sense.
+
 0.2  Tue Jul 28 04:19:59 CEST 2009
 	- first release, brittle, undocumented, incomplete.
 

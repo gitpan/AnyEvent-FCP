@@ -44,7 +44,7 @@ use common::sense;
 
 use Carp;
 
-our $VERSION = '0.2';
+our $VERSION = '0.21';
 
 use Scalar::Util ();
 
@@ -53,15 +53,15 @@ use AnyEvent::Handle;
 
 sub touc($) {
    local $_ = shift;
-   1 while s/((?:^|_)(?:svk|chk|uri|fcp)(?:_|$))/\U$1/;
+   1 while s/((?:^|_)(?:svk|chk|uri|fcp|ds|mime)(?:_|$))/\U$1/;
    s/(?:^|_)(.)/\U$1/g;
    $_
 }
 
 sub tolc($) {
    local $_ = shift;
-   1 while s/(SVK|CHK|URI|FCP)([^_])/$1\_$2/i;
-   1 while s/([^_])(SVK|CHK|URI|FCP)/$1\_$2/i;
+   1 while s/(SVK|CHK|URI|FCP|DS|MIME)([^_])/$1\_$2/i;
+   1 while s/([^_])(SVK|CHK|URI|FCP|DS|MIME)/$1\_$2/i;
    s/(?<=[a-z])(?=[A-Z])/_/g;
    lc
 }
@@ -367,13 +367,11 @@ _txn remove_request => sub {
          1
       },
    );
-
-   $cv->();
 };
 
 =item $cv = $fcp->modify_persistent_request ($global, $identifier[, $client_token[, $priority_class]])
 
-=item $status = $fcp->modify_persistent_request_sync ($global, $identifier[, $client_token[, $priority_class]])
+=item $sync = $fcp->modify_persistent_request_sync ($global, $identifier[, $client_token[, $priority_class]])
 
 =cut
 
@@ -382,9 +380,9 @@ _txn modify_persistent_request => sub {
 
    $self->send_msg (modify_persistent_request =>
       global     => $global ? "true" : "false",
-      identifier => $identifier,
       defined $client_token   ? (client_token   => $client_token  ) : (),
       defined $priority_class ? (priority_class => $priority_class) : (),
+      identifier => $identifier,
       id_cb      => sub {
          my ($self, $type, $kv, $rdata) = @_;
 
@@ -392,8 +390,6 @@ _txn modify_persistent_request => sub {
          1
       },
    );
-
-   $cv->();
 };
 
 =item $cv = $fcp->get_plugin_info ($name, $detailed)
@@ -415,8 +411,34 @@ _txn get_plugin_info => sub {
          1
       },
    );
+};
 
-   $cv->();
+=item $cv = $fcp->client_get ($uri, $identifier, %kv)
+
+=item $status = $fcp->client_get_sync ($uri, $identifier, %kv)
+
+%kv can contain (L<http://wiki.freenetproject.org/FCP2p0ClientGet>).
+
+ignore_ds, ds_only, verbosity, max_size, max_temp_size, max_retries,
+priority_class, persistence, client_token, global, return_type,
+binary_blob, allowed_mime_types, filename, temp_filename
+
+=cut
+
+_txn client_get => sub {
+   my ($self, $cv, $uri, $identifier, %kv) = @_;
+
+   $self->send_msg (client_get =>
+      %kv,
+      uri        => $uri,
+      identifier => $identifier,
+      id_cb       => sub {
+         my ($self, $type, $kv, $rdata) = @_;
+
+         $cv->($kv);
+         1
+      },
+   );
 };
 
 =back
