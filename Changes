@@ -1,5 +1,10 @@
 Revision history for AnyEvent-FCP
 
+0.3  Sat Jun  5 16:49:03 CEST 2010
+	- add a small example in the manpage and a bigger one in eg/.
+	- implement/support a progress callback for unsolicited
+          messages.
+
 0.21 Tue Dec  1 14:49:30 CET 2009
 	- added missing dependency on common::sense.
 

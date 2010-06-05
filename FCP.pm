@@ -8,7 +8,7 @@ AnyEvent::FCP - freenet client protocol 2.0
 
    my $fcp = new AnyEvent::FCP;
 
-# transactions return condvars
+   # transactions return condvars
    my $lp_cv = $fcp->list_peers;
    my $pr_cv = $fcp->list_persistent_requests;
 
@@ -28,6 +28,24 @@ The module uses L<AnyEvent> to find a suitable event module.
 Only very little is implemented, ask if you need more, and look at the
 example program later in this section.
 
+=head2 EXAMPLE
+
+This example fetches the download list and sets the priority of all files
+with "a" in their name to "emergency":
+
+   use AnyEvent::FCP;
+
+   my $fcp = new AnyEvent::FCP;
+
+   $fcp->watch_global_sync (1, 0);
+   my $req = $fcp->list_persistent_requests_sync;
+
+   for my $req (values %$req) {
+      if ($req->{filename} =~ /a/) {
+         $fcp->modify_persistent_request_sync (1, $req->{identifier}, undef, 0);
+      }
+   }
+
 =head2 IMPORT TAGS
 
 Nothing much can be "imported" from this module right now.
@@ -44,7 +62,7 @@ use common::sense;
 
 use Carp;
 
-our $VERSION = '0.21';
+our $VERSION = '0.3';
 
 use Scalar::Util ();
 
@@ -74,27 +92,31 @@ Create a new FCP connection to the given host and port (default
 If no C<name> was specified, then AnyEvent::FCP will generate a
 (hopefully) unique client name for you.
 
-=cut
+You can install a progress callback that is being called with the AnyEvent::FCP
+object, the type, a hashref with key-value pairs and a reference to any received data,
+for all unsolicited messages.
 
-#TODO
-#You can install a progress callback that is being called with the AnyEvent::FCP
-#object, a txn object, the type of the transaction and the attributes. Use
-#it like this:
-#
-#   sub progress_cb {
-#      my ($self, $txn, $type, $attr) = @_;
-#
-#      warn "progress<$txn,$type," . (join ":", %$attr) . ">\n";
-#   }
+Example:
+
+   sub progress_cb {
+      my ($self, $type, $kv, $rdata) = @_;
+
+      if ($type eq "simple_progress") {
+         warn "$kv->{identifier} $kv->{succeeded}/$kv->{required}\n";
+      }
+   }
+
+=cut
 
 sub new {
    my $class = shift;
    my $self = bless { @_ }, $class;
 
-   $self->{host}    ||= $ENV{FREDHOST} || "127.0.0.1";
-   $self->{port}    ||= $ENV{FREDPORT} || 9481;
-   $self->{name}    ||= time.rand.rand.rand; # lame
-   $self->{timeout} ||= 600;
+   $self->{host}     ||= $ENV{FREDHOST} || "127.0.0.1";
+   $self->{port}     ||= $ENV{FREDPORT} || 9481;
+   $self->{name}     ||= time.rand.rand.rand; # lame
+   $self->{timeout}  ||= 600;
+   $self->{progress} ||= sub { };
 
    $self->{id} = "a0";
 
@@ -122,13 +144,6 @@ sub new {
 
    $self
 }
-
-#sub progress {
-#   my ($self, $txn, $type, $attr) = @_;
-#
-#   $self->{progress}->($self, $txn, $type, $attr)
-#      if $self->{progress};
-#}
 
 sub send_msg {
    my ($self, $type, %kv) = @_;
@@ -223,8 +238,7 @@ sub default_recv {
       $self->{id}{$kv->{identifier}}($self, $type, $kv, $rdata)
          and delete $self->{id}{$kv->{identifier}};
    } else {
-      # on_warn
-      #warn "protocol warning (unexpected $type message)\n";
+      &{ $self->{progress} };
    }
 }
 

@@ -6,8 +6,9 @@ SYNOPSIS
 
        my $fcp = new AnyEvent::FCP;
 
-    # transactions return condvars my $lp_cv = $fcp->list_peers; my $pr_cv =
-    $fcp->list_persistent_requests;
+       # transactions return condvars
+       my $lp_cv = $fcp->list_peers;
+       my $pr_cv = $fcp->list_persistent_requests;
 
        my $peers = $lp_cv->recv;
        my $reqs  = $pr_cv->recv;
@@ -24,6 +25,23 @@ DESCRIPTION
     Only very little is implemented, ask if you need more, and look at the
     example program later in this section.
 
+  EXAMPLE
+    This example fetches the download list and sets the priority of all
+    files with "a" in their name to "emergency":
+
+       use AnyEvent::FCP;
+
+       my $fcp = new AnyEvent::FCP;
+
+       $fcp->watch_global_sync (1, 0);
+       my $req = $fcp->list_persistent_requests_sync;
+
+       for my $req (values %$req) {
+          if ($req->{filename} =~ /a/) {
+             $fcp->modify_persistent_request_sync (1, $req->{identifier}, undef, 0);
+          }
+       }
+
   IMPORT TAGS
     Nothing much can be "imported" from this module right now.
 
@@ -36,6 +54,20 @@ DESCRIPTION
 
         If no "name" was specified, then AnyEvent::FCP will generate a
         (hopefully) unique client name for you.
+
+        You can install a progress callback that is being called with the
+        AnyEvent::FCP object, the type, a hashref with key-value pairs and a
+        reference to any received data, for all unsolicited messages.
+
+        Example:
+
+           sub progress_cb {
+              my ($self, $type, $kv, $rdata) = @_;
+
+              if ($type eq "simple_progress") {
+                 warn "$kv->{identifier} $kv->{succeeded}/$kv->{required}\n";
+              }
+           }
 
     $cv = $fcp->list_peers ([$with_metdata[, $with_volatile]])
     $peers = $fcp->list_peers_sync ([$with_metdata[, $with_volatile]])
